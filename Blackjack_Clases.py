@@ -84,3 +84,5 @@ class Crupier:
     
     def hit(self):
         return self.deck.getCard()
+
+Deck.getCard()
