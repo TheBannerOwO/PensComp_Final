@@ -84,6 +84,11 @@ class Player:
             desicion = input("split, hit, or stand ")
             if desicion == "hit":
                 self.takeCard()
+                for i in range(len(self.mano)):
+                    puntos = puntos + self.mano[i].valor
+                    if puntos > 21:
+                        print("te pasaste con : ", puntos)
+                        return "lose"
             elif desicion == "stand":
                 for i in range(len(self.mano)):
                     puntos = puntos + self.mano[i].valor
@@ -100,6 +105,11 @@ class Player:
             desicion = input("hit, or stand ")
             if desicion == "hit":
                 self.takeCard()
+                for i in range(len(self.mano)):
+                    puntos = puntos + self.mano[i].valor
+                    if puntos > 21:
+                        print("te pasaste con : ", puntos)
+                        return "lose"
             elif desicion == "stand":
                 for i in range(len(self.mano)):
                     puntos = puntos + self.mano[i].valor
@@ -110,5 +120,3 @@ class Player:
     
 
 mazo = Deck()
-player = Player(mazo)
-print(player.mano)
