@@ -199,6 +199,13 @@ class Crupier:
     def __init__(self, deck: Deck | ConjoinedDeck):
         self.hand: list[Card] = []
         self.deck: ConjoinedDeck | Deck = deck
+    
+
+    def __str__(self):
+        return f'Crupier: {' '.join([str(card) for card in self.hand])} ({self.handValue()})'
+
+    __repr__ = __str__
+
 
     # Agarra una carta del mazo y la agrega a la mano,
     # devuelve la carta que se agarró.
@@ -237,7 +244,11 @@ class Player(Crupier):
         self.hand: list[Card] = []    # Lista de cartas en la mano
         self.balance: int = balance    # Saldo inicial del jugador
         self.deck: ConjoinedDeck | Deck = deck    # Referencia a los mazos
+    
+    def __str__(self):
+        return f'{self.name}: {' '.join([str(card) for card in self.hand])} ({self.handValue()})'
 
+    __repr__ = __str__
 
     # Devuelve la cantidad de plata pedida,
     # si el jugador no tiene suficiente devuelve 0.
@@ -250,53 +261,6 @@ class Player(Crupier):
         else:
             return 0
         return amount
-
-
-    def askBet(self):
-        print("Saldo actual:", self.balance)
-        bet = input("¿Cuánto apostás? \n >> ")
-
-
-    # Menu dinamico entre las opciones dadas en *args.
-    def promptOptions(self, *args: str):
-        
-        options: list[str] = [arg for arg in args]
-        
-        # Tuve que copypastear esto aca por un error
-        # de referencia circular al importar. 乁(꘠︿꘠)ㄏ
-        while True:
-            try:
-                print(f' Fase de turnos || Turno de {self.name}\n\n')
-                print(f'Tus cartas: ', *[card for card in self.hand])
-                print('\nOpciones:\n')
-                for i in range(len(options)):
-                    print(f'{i+1}. {options[i]}')
-
-                opt = int(input("Nº de la opcion\n >> ")) - 1
-                if opt not in range(len(options)):
-                    raise Exception('El numero debe estar entre las opciones proveidas')
-                return options[opt].lower()
-            except Exception as e:
-                os.system('cls' if os.name == 'nt' else 'clear')
-                if isinstance(e, KeyboardInterrupt):
-                    sys.exit()
-                print(f'\033[41mError: {e}\033[0m', end="\n\n")
-
-
-
-    # Hace que el jugador juege un turno.
-    # Devuelve 0 si el jugador decide no jugar,
-    # devuelve la suma de las cartas en la mano si el jugador decide jugar
-    def playTurn(self):
-        os.system('cls' if os.name == 'nt' else 'clear')
-        action: str = self.promptOptions('Hit', 'Stay')
-
-        match action:
-            case 'hit':
-                self.takeCard()
-                return self.handValue()
-            case 'stay':
-                return 0
 
     
 

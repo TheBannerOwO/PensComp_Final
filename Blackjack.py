@@ -6,49 +6,9 @@ utilizando una clase Player (en clases.py) y un mazo de cartas.
 Cada jugador realiza una jugada, apuesta, y se actualiza su saldo en base al resultado.
 """
 
-from GameClasses import Player, ConjoinedDeck, Crupier
-from helpers import waitContinue, clearConsole, handleInput, inputPlayerAmnt, inputValidateName, inputBetAmnt
+from GameClasses import Player, ConjoinedDeck, Crupier, Card
+from helpers import waitContinue, clearConsole, handleInput, inputPlayerAmnt, inputValidateName, inputBetAmnt, inputOptionsMenu, win
 import os, sys, time
-
-
-# Falta implementar en el loop del juego
-def mano(self):
-        suma = 0 
-        balance = 0
-
-        
-
-        while True:
-            print("Tus cartas son:", self.mano)
-            hand = self.hitOrStand()
-
-            if isinstance(hand, int):  # Si devuelve un número, el jugador eligió 'stand'
-                suma += hand
-                print("Total de puntos:", suma)
-
-                if suma == 21:
-                    print("¡Ganaste!")
-                    balance = self.balance + (int(bet) * 2)
-                    print("Nuevo saldo:", balance)
-                    return balance
-
-                elif suma > 21:
-                    print("Perdiste")
-                    balance = self.balance - int(bet)
-                    print("Nuevo saldo:", balance)
-                    return balance
-
-                # Si no ganó ni perdió, simplemente retorna el balance sin cambio
-                print("Tus cartas suman:", suma)
-                return balance
-
-            print("Resultado:", hand)
-
-            if hand == "lose":
-                # El jugador se pasó y pierde la apuesta
-                balance = self.balance - int(bet)
-                print("Nuevo saldo:", balance)
-                return balance
 
 def main():
 
@@ -98,75 +58,92 @@ def main():
         for name, player in players.items():
             player.takeCard()
             player.takeCard()
-            print(f'{name}:', *[f'{card}' for card in player.hand], end='\n\n')
+            print(player, end='\n\n')
+
+        print(crupier, end='\n\n')
 
         waitContinue()
 
         # Los jugadores juegan turnos hasta que nadie quiera seguir,
         # o alguien gane.
-        enabled = [name for name in players.keys()]
-        winners = []
-        bestHand = 0
+        enabled: list[str] = [name for name in players.keys()]
+        losers: list[str] = []
 
-        while True:
-            passes = 0
-            for name in enabled:
-                turn = players[name].playTurn()
+        for name in enabled:
+            clearConsole()
+
+            turnHeader = f' Fase de turnos || Turno de {name}\n\n'
+
+            while True:
+
+                if players[name].handValue() > 21:
+                    print(turnHeader+str(players[name])+f'\n\n{name} se pasó, pasando turno...\n')
+                    losers.append(name)
+                    waitContinue()
+                    break
+
+                if players[name].handValue() == 21:
+                    print(turnHeader+str(players[name])+f'\n\n{name} tiene blackjack, pasando turno...\n')
+                    waitContinue()
+                    break
                 
-                if  turn == 21: winners.append(name)
-                elif turn == 0: passes += 1
-                elif turn < 21: continue
-                elif turn > 21: enabled.remove(name)    
+                action: str = handleInput(inputOptionsMenu, ['Hit', 'Stay'], header=turnHeader+str(players[name]))
 
-            if len(winners) != 0:
-                break
-            
-            # Si nadie tiene blackjack, reutilizamos la lista de winners
-            # para guardar a los jugadores que tengan las mejores manos.
-            elif passes == len(enabled):
-                for name in enabled:
-                    if len(winners) == 0:
-                        winners.append(name)
-                        bestHand = players[name].handValue()
+                match action:
+                    case 'hit':
+                        newCard = players[name].takeCard()
+                        newHandValue = players[name].handValue()
+                        print(f'Nueva carta: {newCard}, (Suma actual: {newHandValue})')
+                    case 'stay':
+                        print(f'Pasando turno...')
+                        break
 
-                    elif players[name].handValue() > bestHand:
-                        winners.clear()
-                        winners.append(name)
-                        bestHand = players[name].handValue()
-
-                    elif players[name].handValue() == bestHand:
-                        winners.append(name)
-                break
-
+                waitContinue()
+                clearConsole()
+        
+        enabled = [name for name in enabled if name not in losers]
 
         # Que el crupier agarre cartas hasta que sume 18 o mas,
         # y que empiece la comparacion de manos para decidir los payouts.
         while crupier.handValue() < 17:
             crupier.takeCard()
+        
+        clearConsole()
+        
+        print(' Fase de comparación \n\n')
+
+        for name, player in players.items():
+            print(player, end='\n\n')
+        print(crupier, end='\n\n')
+
+        waitContinue()
+        clearConsole()
+        print('---- Resultados ----\n')
 
         crupierValue = crupier.handValue()
-        
+
+        results: dict[str, str]
+
         # Si se pasa, ganan todos los que no perdieron.
         if crupierValue > 21:
             for name in enabled:
-                print(f'Ganó {name}')
-                players[name].balance += bets[name]*2
-
-        # Si tiene blackjack, ganan los demas que tengan blackjack
-        elif crupierValue == 21:
-            if bestHand == 21:
-                for name in winners:
-                    print(f'Ganó {name}')
-                    players[name].balance = bets[name]*2
+                win(players[name], bets[name])
         
-        # Si no tiene la mejor mano, ganan los que la tengan
-        elif bestHand > crupierValue:
-            for name in winners:
-                print(f'Ganó {name}')
-                players[name].balance = bets[name]*2
-
+        # Si no, se comparan todas las manos con las del crupier.
         else:
-            print('Nadie ganó :(')
+            for name in enabled:
+                if players[name].handValue() > crupierValue:
+                    win(players[name], bets[name])
+                elif players[name].handValue() == crupierValue:
+                    print(f'{name} recuperó su apuesta ({bets[name]})')
+                    players[name].balance += bets[name]
+                else:
+                    losers.append(name)
+        
+        for name in losers:
+            print(f'{name} perdió {bets[name]}')
+        
+        print('\n---- Resultados ----\n')
 
         waitContinue()
 
@@ -183,9 +160,7 @@ def main():
 
         # ? TODO: Al final de la ronda, dar a elegir a los jugadores si quieren retirarse o retirarlos si no tienen mas plata.
 
-        # TODO: Falta hacer "pantallas" para algunas partes. (eg: cuando el dealer agarra cartas, final de la partida, etc...)
-
-        # TODO: Arreglar bugs en los que se a veces skipean algunas pantallas (??)
+        # TODO: Añadir winrate en los jugadores para extraer estadisticas.
 
         round += 1
 

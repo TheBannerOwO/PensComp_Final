@@ -55,11 +55,20 @@ def inputPlayerAmnt():
     return playerCount
 
 
+# Genera el mensaje de que el jugador dado ganó y le agrega
+# su apuesta multiplicada por un factor dado (def=2) a su balance.
+def win(player: Player, bet: int, factor:int = 2):
+    print(f'{player.name} ganó {bet*factor} (apuesta original {bet})')
+    player.balance += bet*factor
+
+
 # Pregunta y valida que el nombre no este en la lista dada.
 def inputValidateName(i: int, players: list[str]):
     name = input(f"Nombre del jugador {i}:\n >> ")
     if name in players:
         raise Exception(f'Ya existe un jugador llamado {name}')
+    if len(name) > 16 or len(name) < 3:
+        raise Exception('El nombre debe estar entre 3 y 16 caracteres')
     return name
 
 
@@ -68,8 +77,20 @@ def inputBetAmnt(balance: int):
     bet = int(input("¿Cuánto apostás?\n >> "))
 
     if bet > balance:
-        raise Exception(f'No podes apostar mas de lo que tenés.')
+        raise Exception(f'No podes apostar mas de lo que tenés')
     elif bet < 1:
         raise Exception(f'La apuesta minima es de 1')
     
     return bet
+
+
+# Da a elegir entre una lista de opciones.
+def inputOptionsMenu(options: list[str]):
+    print('\nOpciones:\n')
+    for i in range(len(options)):
+        print(f'{i+1}. {options[i]}')
+
+    opt = int(input("Nº de la opcion\n >> ")) - 1
+    if opt not in range(len(options)):
+        raise Exception('El numero debe estar entre las opciones proveidas')
+    return options[opt].lower()
