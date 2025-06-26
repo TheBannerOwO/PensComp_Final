@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Este script ejecuta una ronda de Blackjack para múltiples jugadores,
-utilizando una clase Player (en clases.py) y un mazo de cartas.
-Cada jugador realiza una jugada, apuesta, y se actualiza su saldo en base al resultado.
+Este script arranca el juego.
 """
 
 from GameClasses import Player, ConjoinedDeck, Crupier, Card
@@ -40,6 +38,11 @@ def main():
         # Pedimos una apuesta a cada jugador.
         for name, player in players.items():
             clearConsole()
+            if player.balance < 1:
+                print(f'{name} no tiene suficiente plata para hacer una apuesta valida,')
+                print('se le agregaran +50 chips para que pueda seguir jugando.', end='\n\n')
+                player.balance = 50 # '=' en vez de '+=' solo por las dudas haya un caso en el que el jugador pueda tener balance negativo.
+                waitContinue()
             bet = handleInput(inputBetAmnt, player.balance, header=f' Fase de apuestas || Turno de {name}\n\nSaldo actual: {player.balance}')
             player.extractBalance(bet)
             bets[name] = bet
@@ -86,16 +89,18 @@ def main():
                     print(turnHeader+str(players[name])+f'\n\n{name} tiene blackjack, pasando turno...\n')
                     waitContinue()
                     break
-                
-                action: str = handleInput(inputOptionsMenu, ['Hit', 'Stay'], header=turnHeader+str(players[name]))
 
-                match action:
+                match handleInput(
+                    inputOptionsMenu, ['Hit', 'Stay'],
+                    header=turnHeader+f"{players[name]}\n\n{crupier}"
+                    ):
                     case 'hit':
                         newCard = players[name].takeCard()
                         newHandValue = players[name].handValue()
-                        print(f'Nueva carta: {newCard}, (Suma actual: {newHandValue})')
+                        print(f'\nNueva carta: {newCard}, (Suma actual: {newHandValue})')
                     case 'stay':
-                        print(f'Pasando turno...')
+                        print(f'\nPasando turno...')
+                        waitContinue()
                         break
 
                 waitContinue()
@@ -106,11 +111,20 @@ def main():
         # Que el crupier agarre cartas hasta que sume 18 o mas,
         # y que empiece la comparacion de manos para decidir los payouts.
         while crupier.handValue() < 17:
-            crupier.takeCard()
+            clearConsole()
+            print(f'El crupier va a agarrar una carta...', end='\n\n')
+            print(crupier, end='\n\n')
+            for i in range(3):
+                time.sleep(0.1)
+                print('.', end='')
+                time.sleep(0.1)
+            c = crupier.takeCard()
+            print(f'\n\nAgarró {c}, ahora tiene un total de: {crupier.handValue()}', end='\n\n')
+            waitContinue()
         
         clearConsole()
         
-        print(' Fase de comparación \n\n')
+        print(' Fase de comparación \n')
 
         for name, player in players.items():
             print(player, end='\n\n')
@@ -121,8 +135,6 @@ def main():
         print('---- Resultados ----\n')
 
         crupierValue = crupier.handValue()
-
-        results: dict[str, str]
 
         # Si se pasa, ganan todos los que no perdieron.
         if crupierValue > 21:
@@ -154,13 +166,9 @@ def main():
         decks.reset()
         decks.shuffle()
 
-        # TODO: FALTA TESTING
-
-        # ! Hay que testear a ver que pasa si un jugador se queda sin plata. (Creo que se rompe el juego)
+        # TODO: Añadir winrate en los jugadores para extraer estadisticas.
 
         # ? TODO: Al final de la ronda, dar a elegir a los jugadores si quieren retirarse o retirarlos si no tienen mas plata.
-
-        # TODO: Añadir winrate en los jugadores para extraer estadisticas.
 
         round += 1
 

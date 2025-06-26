@@ -14,10 +14,22 @@ def waitContinue(msg="Presione enter para continuar..."):
     input(msg)
 
 
+# Wrapper de input() para hacer mas simple pedir inputs lindos.
+def prettyInput(msg="Input", sym=" >> "):
+    return input(f'{msg}\n{sym}')
+
+
 # Limpia la consola
 def clearConsole():
     # 'cls' para Windows, 'clear' para Linux.
     os.system('cls' if os.name == 'nt' else 'clear')
+
+
+# Genera el mensaje de que el jugador dado ganó y le agrega
+# su apuesta multiplicada por un factor dado (def=2) a su balance.
+def win(player: Player, bet: int, factor:int = 2):
+    print(f'{player.name} ganó {bet*factor} (apuesta original {bet})')
+    player.balance += bet*factor
 
 
 """
@@ -47,7 +59,7 @@ def handleInput(func, *args, header: str = ''):
 
 # Pregunta y devuelve la cantida de jugadores.
 def inputPlayerAmnt():
-    playerCount = int(input("¿Cuántos jugadores son? (Max. 7)\n >> "))
+    playerCount = int(prettyInput("¿Cuántos jugadores son? (Max. 7)"))
 
     if playerCount < 1 or playerCount > 7:
         raise Exception('Input invalido, intente de nuevo')
@@ -55,16 +67,9 @@ def inputPlayerAmnt():
     return playerCount
 
 
-# Genera el mensaje de que el jugador dado ganó y le agrega
-# su apuesta multiplicada por un factor dado (def=2) a su balance.
-def win(player: Player, bet: int, factor:int = 2):
-    print(f'{player.name} ganó {bet*factor} (apuesta original {bet})')
-    player.balance += bet*factor
-
-
 # Pregunta y valida que el nombre no este en la lista dada.
 def inputValidateName(i: int, players: list[str]):
-    name = input(f"Nombre del jugador {i}:\n >> ")
+    name = prettyInput(f"Nombre del jugador {i}:")
     if name in players:
         raise Exception(f'Ya existe un jugador llamado {name}')
     if len(name) > 16 or len(name) < 3:
@@ -74,7 +79,7 @@ def inputValidateName(i: int, players: list[str]):
 
 # Pregunta y devuelve la cantidad a apostar.
 def inputBetAmnt(balance: int):
-    bet = int(input("¿Cuánto apostás?\n >> "))
+    bet = int(prettyInput("¿Cuánto apostás?"))
 
     if bet > balance:
         raise Exception(f'No podes apostar mas de lo que tenés')
@@ -90,7 +95,7 @@ def inputOptionsMenu(options: list[str]):
     for i in range(len(options)):
         print(f'{i+1}. {options[i]}')
 
-    opt = int(input("Nº de la opcion\n >> ")) - 1
+    opt = int(prettyInput("\nNº de la opcion")) - 1
     if opt not in range(len(options)):
         raise Exception('El numero debe estar entre las opciones proveidas')
     return options[opt].lower()
