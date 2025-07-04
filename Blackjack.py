@@ -4,36 +4,68 @@
 Este script arranca el juego.
 """
 
-from GameClasses import Player, ConjoinedDeck, Crupier, Card
-from helpers import waitContinue, clearConsole, handleInput, inputPlayerAmnt, inputValidateName, inputBetAmnt, inputOptionsMenu, win
-import os, sys, time
+from GameClasses import Player, ConjoinedDeck, Crupier, Bot
+from helpers import waitContinue, clearConsole, handleInput, inputPlayerAmnt, inputValidateName, inputBetAmnt, inputOptionsMenu, win, inputBotUmbral
+import os, sys, time, random
 
 def main():
 
-    players: dict[str, Player] = {}
+    players: dict[str, Player | Bot] = {}
     bets: dict[str, int] = {}
     decks = ConjoinedDeck(newDecks = 8, shuffled = True)
+    botsOnly = False
+    playerAmnt = handleInput(inputPlayerAmnt)
+
+    if playerAmnt == None or playerAmnt == 0:
+        playerAmnt = 0
+        botsOnly = True
 
     # Populamos el diccionario de jugadores y apuestas.
-    playerCount = handleInput(inputPlayerAmnt)
-
-    for i in range(playerCount):
+    for i in range(playerAmnt):
         name = handleInput(inputValidateName, i+1, [name for name in players.keys()])
         players[name] = Player(name, decks)
         bets[name] = 0
+        
+
+    # Rellenamos los puestos que faltan con bots
+    while len(players) < 7:
+        name = f'Bot {len(players) + 1}'
+        umbral = 17
+        if botsOnly:
+            umbral = handleInput(inputBotUmbral, name)
+        players[name] = Bot(name, decks, umbral=umbral)
+        bets[name] = 0
+    waitContinue()
+
     round = 1
 
     # Loop principal del juego
     while True:
 
+
+        # Cada "====..." denota un "cambio de etapa" en el sistema del juego
+
+
+        # Si es una partida "real", randomizar los umbrales de los bots.
+        if not botsOnly:
+            for name, player in players.items():
+                if isinstance(player, Bot):
+                    player.umbral = random.randint(14, 19)
+
+
         # Mostramos la lista de jugadores y su dinero actual al comienzo de la ronda.
         clearConsole()
+
         print(f'Ronda Nº{round}\n')
 
         print(f'Dinero actual:', 
-              *[f'\n{name}: {player.balance}' for name, player in players.items()], 
-              end='\n\n')
-        waitContinue()
+            *[f'\n{name}: {player.balance}' for name, player in players.items()], 
+            end='\n\n')
+        
+        if not botsOnly:
+            waitContinue()
+
+        # ============================================================
 
         # Pedimos una apuesta a cada jugador.
         for name, player in players.items():
@@ -43,11 +75,18 @@ def main():
                 print('se le agregaran +50 chips para que pueda seguir jugando.', end='\n\n')
                 player.balance = 50 # '=' en vez de '+=' solo por las dudas haya un caso en el que el jugador pueda tener balance negativo.
                 waitContinue()
+            
+            # Si es un bot, apuesta 10 automaticamente.
+            if isinstance(player, Bot):
+                bets[name] = player.extractBalance(10)
+                continue
+
             bet = handleInput(inputBetAmnt, player.balance, header=f' Fase de apuestas || Turno de {name}\n\nSaldo actual: {player.balance}')
-            player.extractBalance(bet)
-            bets[name] = bet
+            bets[name] = player.extractBalance(bet)
             print(f"\nSe apostó {bet}, saldo restante: {player.balance}\n")
             waitContinue()
+
+        # ============================================================
 
         clearConsole()
 
@@ -65,7 +104,10 @@ def main():
 
         print(crupier, end='\n\n')
 
-        waitContinue()
+        if not botsOnly:
+            waitContinue()
+
+        # ============================================================
 
         # Los jugadores juegan turnos hasta que nadie quiera seguir,
         # o alguien gane.
@@ -73,6 +115,8 @@ def main():
         losers: list[str] = []
 
         for name in enabled:
+            
+
             clearConsole()
 
             turnHeader = f' Fase de turnos || Turno de {name}\n\n'
@@ -82,8 +126,18 @@ def main():
                 if players[name].handValue() > 21:
                     print(turnHeader+str(players[name])+f'\n\n{name} se pasó, pasando turno...\n')
                     losers.append(name)
-                    waitContinue()
+
+                    if not botsOnly and not isinstance(players[name], Bot):
+                        waitContinue()
                     break
+
+                # Si es un bot, y su umbral es mayor al valor de su mano, pide una carta.
+                if isinstance(players[name], Bot):
+                    if players[name].umbral > players[name].handValue():
+                        players[name].takeCard()
+                        continue
+                    else:
+                        break
 
                 if players[name].handValue() == 21:
                     print(turnHeader+str(players[name])+f'\n\n{name} tiene blackjack, pasando turno...\n')
@@ -106,21 +160,28 @@ def main():
                 waitContinue()
                 clearConsole()
         
+        # ============================================================
+
         enabled = [name for name in enabled if name not in losers]
 
         # Que el crupier agarre cartas hasta que sume 18 o mas,
         # y que empiece la comparacion de manos para decidir los payouts.
         while crupier.handValue() < 17:
             clearConsole()
+
             print(f'El crupier va a agarrar una carta...', end='\n\n')
             print(crupier, end='\n\n')
-            for i in range(3):
-                time.sleep(0.1)
-                print('.', end='')
-                time.sleep(0.1)
+
             c = crupier.takeCard()
-            print(f'\n\nAgarró {c}, ahora tiene un total de: {crupier.handValue()}', end='\n\n')
-            waitContinue()
+
+            if not botsOnly:
+                for i in range(3):
+                    time.sleep(0.1)
+                    print('.', end='')
+                    time.sleep(0.1)
+                print(f'\n\nAgarró {c}, ahora tiene un total de: {crupier.handValue()}', end='\n\n')
+
+                waitContinue()
         
         clearConsole()
         
@@ -130,8 +191,13 @@ def main():
             print(player, end='\n\n')
         print(crupier, end='\n\n')
 
-        waitContinue()
+        if not botsOnly:
+            waitContinue()
+
+        # ============================================================
+
         clearConsole()
+
         print('---- Resultados ----\n')
 
         crupierValue = crupier.handValue()
@@ -157,20 +223,50 @@ def main():
         
         print('\n---- Resultados ----\n')
 
-        waitContinue()
+        if not botsOnly:
+            waitContinue()
+
+        # ============================================================
 
         # Reseteamos el mazo y las manos para
         # poder empezar otra ronda.
+        # Ademas, sumamos las estadisticas.
+        # (lo hago aca para que este ligeramente ordenado)
         for name, player in players.items():
+
+            if name in losers: player.stats["loses"] += 1
+            else: player.stats["wins"] += 1
+
             player.hand.clear()
+
         decks.reset()
         decks.shuffle()
 
-        # TODO: Añadir winrate en los jugadores para extraer estadisticas.
-
-        # ? TODO: Al final de la ronda, dar a elegir a los jugadores si quieren retirarse o retirarlos si no tienen mas plata.
-
         round += 1
+
+        clearConsole()
+
+        # Mostramos una ultima pantalla con los winrates.
+
+        print('--- Estadisticas ---', end='\n\n')
+
+        for name, player in players.items():
+            wins = player.stats["wins"]
+            loses = player.stats["loses"]
+            winrate = int((wins/(wins+loses))*100)
+            finalString = f'{wins}w / {loses}l || %{winrate}wr'
+
+            if isinstance(player, Bot):
+                print(f'{name} (u={player.umbral}): {finalString}')
+                continue
+
+            print(f'{name}: {finalString}')
+
+        print('\n--- Estadisticas ---\n')
+
+        waitContinue()
+
+
 
 
 if __name__ == "__main__":

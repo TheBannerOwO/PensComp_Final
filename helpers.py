@@ -59,9 +59,9 @@ def handleInput(func, *args, header: str = ''):
 
 # Pregunta y devuelve la cantida de jugadores.
 def inputPlayerAmnt():
-    playerCount = int(prettyInput("¿Cuántos jugadores son? (Max. 7)"))
+    playerCount = int(prettyInput("¿Cuántos jugadores son? (Max. 7) (0 para winrate testing)"))
 
-    if playerCount < 1 or playerCount > 7:
+    if playerCount < 0 or playerCount > 7:
         raise Exception('Input invalido, intente de nuevo')
 
     return playerCount
@@ -99,3 +99,12 @@ def inputOptionsMenu(options: list[str]):
     if opt not in range(len(options)):
         raise Exception('El numero debe estar entre las opciones proveidas')
     return options[opt].lower()
+
+
+# Deja elegir el umbral de los bots.
+def inputBotUmbral(botName: str):
+    umbral = int(prettyInput(f"Umbral para {botName} (1 <= umbral <= 21)"))
+
+    if umbral < 1 or umbral > 21:
+        raise Exception('El numero debe estar entre 1 y 21 incluidos')
+    return umbral

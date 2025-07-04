@@ -70,7 +70,7 @@ class Card:
 class Deck:
 
     def __init__(self, shuffled=False):
-        self.cards: list[Card] = self.reset()  # Inicializa el mazo con 64 cartas
+        self.cards: list[Card] = self.newDeck()  # Inicializa el mazo con 64 cartas
         if shuffled:
             self.shuffle()
 
@@ -87,7 +87,7 @@ class Deck:
         return len(self.cards)
 
 
-    def reset(self):
+    def newDeck(self):
         """
         Crea un nuevo mazo de 64 cartas (14 cartas para cada palo)
         """
@@ -154,11 +154,11 @@ class ConjoinedDeck:
 
     def __len__(self):
         return len(self.decks)
-    
+
 
     def reset(self):
         for i in range(len(self.decks)):
-            self.decks[i].reset()
+            self.decks[i].cards = self.decks[i].newDeck()
 
 
     def shuffle(self):
@@ -175,25 +175,28 @@ class ConjoinedDeck:
 
     def getCard(self):
         deckAmt = len(self.decks)
-
         used = []
+
         while len(used) != deckAmt:
-            n = random.randint(0, deckAmt-1)
-            if n in used:
-                continue
 
-            card = self.decks[n].getCard()
+            while len(used) != deckAmt:
+                n = random.randint(0, deckAmt-1)
+                if n in used:
+                    continue
 
-            if card != None:
-                return card
+                card = self.decks[n].getCard()
+
+                if card != None:
+                    return card
+                
+                used.append(n)
             
-            used.append(n)
-        
-        self.reset()
-        return self.getCard()
+            self.reset()
 
 
 
+# Esta clase representa al crupier,
+# y se usa como base para crear un jugador
 class Crupier:
 
     def __init__(self, deck: Deck | ConjoinedDeck):
@@ -235,8 +238,7 @@ class Crupier:
 
 
 
-# Clase que representa un jugador de Blackjack.
-# Se puede reutilizar la clase del crupier.
+# Clase que representa un jugador.
 class Player(Crupier):
 
     def __init__(self, name: str, deck: ConjoinedDeck | Deck, balance: int = 10000):
@@ -244,6 +246,13 @@ class Player(Crupier):
         self.hand: list[Card] = []    # Lista de cartas en la mano
         self.balance: int = balance    # Saldo inicial del jugador
         self.deck: ConjoinedDeck | Deck = deck    # Referencia a los mazos
+
+        # Estadisticas. Las partidas donde
+        # la apuesta se recupera no se cuentan.
+        self.stats: dict = {
+            "wins": 0,
+            "loses": 0,
+        }
     
     def __str__(self):
         return f'{self.name}: {' '.join([str(card) for card in self.hand])} ({self.handValue()})'
@@ -262,7 +271,24 @@ class Player(Crupier):
             return 0
         return amount
 
+
+
+# Esta clase representa un bot
+class Bot(Player):
+
+    def __init__(self, name: str, deck: ConjoinedDeck | Deck, umbral: int = 17, balance = 10000):
+        # Esta variable representa el numero con el que va
+        # a comparar su mano para saber si dejar de pedir cartas.
+        self.umbral: int = umbral
+
+        super().__init__(name, deck, balance)
     
+    def __str__(self):
+        return f'{self.name} (u={self.umbral}): {' '.join([str(card) for card in self.hand])} ({self.handValue()})'
+
+    __repr__ = __str__
+
+
 
 # Asegura que el codigo de testing no va a correr si el juego arranca
 if __name__ == '__main__':
