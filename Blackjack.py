@@ -39,6 +39,7 @@ def main():
 
     round = 1
 
+    # ! Consigna 6
     # Loop principal del juego
     while True:
 
@@ -66,6 +67,8 @@ def main():
             waitContinue()
 
         # ============================================================
+
+        # ! Consigna 8
 
         # Pedimos una apuesta a cada jugador.
         for name, player in players.items():
@@ -109,8 +112,7 @@ def main():
 
         # ============================================================
 
-        # Los jugadores juegan turnos hasta que nadie quiera seguir,
-        # o alguien gane.
+        # Se ejecutan los turnos para cada jugador
         enabled: list[str] = [name for name in players.keys()]
         losers: list[str] = []
 
@@ -195,6 +197,8 @@ def main():
             waitContinue()
 
         # ============================================================
+
+        # ! Consigna 7
 
         clearConsole()
 

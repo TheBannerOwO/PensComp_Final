@@ -66,6 +66,7 @@ class Card:
 
 
 
+# ! Parte principal de la consigna 1
 # Clase que representa un mazo de cartas
 class Deck:
 
@@ -111,6 +112,7 @@ class Deck:
 
 
 
+# ! Parte principal de la consigna 2
 # Clase que representa un conjunto de mazos,
 # es la forma principal en la que se deberia interactuar con los mazos.
 class ConjoinedDeck:
@@ -210,6 +212,7 @@ class Crupier:
     __repr__ = __str__
 
 
+    # ! Consigna 3
     # Agarra una carta del mazo y la agrega a la mano,
     # devuelve la carta que se agarró.
     def takeCard(self):
@@ -217,7 +220,8 @@ class Crupier:
         self.hand.append(card)
         return card
 
-
+    
+    # ! Consigna 4
     # Calcula el valor total de la mano.
     def handValue(self):
         total = 0
@@ -241,7 +245,7 @@ class Crupier:
 # Clase que representa un jugador.
 class Player(Crupier):
 
-    def __init__(self, name: str, deck: ConjoinedDeck | Deck, balance: int = 10000):
+    def __init__(self, name: str, deck: ConjoinedDeck | Deck, balance: int = 500):
         self.name: str = name
         self.hand: list[Card] = []    # Lista de cartas en la mano
         self.balance: int = balance    # Saldo inicial del jugador
@@ -273,6 +277,7 @@ class Player(Crupier):
 
 
 
+# ! Parte esencial de la consigna 9
 # Esta clase representa un bot
 class Bot(Player):
 
